@@ -1,0 +1,26 @@
+name: tests-and-security-scan
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [01-llm-api-security-audit, 02-ai-red-team-rag-assessment]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Regression tests (each finding is a test)
+        working-directory: ${{ matrix.project }}
+        run: pytest -q
+      - name: SAST (Bandit)
+        run: bandit -q -r ${{ matrix.project }} -x ${{ matrix.project }}/tests
